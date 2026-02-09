@@ -5,6 +5,7 @@ import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 
 console.log("model3d.js loaded ✅");
+const isMobile = matchMedia("(max-width: 767px)").matches;
 
 const loader = new GLTFLoader();
 const gltfCache = new Map();
@@ -109,7 +110,8 @@ function createViewer(mountEl, MODEL_URL, targetSize = 1.6, offsetY = -0.4, grou
   const s = GROUP_SETTINGS[group] || GROUP_SETTINGS.hero;
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const isMobile = matchMedia("(max-width: 767px)").matches;
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.25 : 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = s.exposure;
@@ -259,6 +261,21 @@ function createViewer(mountEl, MODEL_URL, targetSize = 1.6, offsetY = -0.4, grou
  */
 const SECTION_WITHOUT_3D = document.querySelector("section.section-middle");
 
+function initSlotViewer(slot) {
+  // verhindert Doppel-Init
+  if (slot.__viewerInit) return;
+  slot.__viewerInit = true;
+
+  const url = slot.getAttribute("data-model");
+  if (!url) return;
+
+  const size = parseFloat(slot.getAttribute("data-size") || "1.6");
+  const oy = parseFloat(slot.getAttribute("data-offset-y") || "-0.4");
+  const group = slot.getAttribute("data-group") || "small";
+
+  createViewer(slot, url, size, oy, group);
+}
+
 /* ------------------------------------------------------------------ */
 
 const big = document.querySelector("._3d-container-big");
@@ -269,25 +286,28 @@ if (big) {
   console.warn("No ._3d-container-big found (ok if you removed it).");
 }
 
-const isMobile = matchMedia("(max-width: 767px)").matches;
+const slotObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+
+      initSlotViewer(e.target);
+      slotObserver.unobserve(e.target); // nur 1x initialisieren
+    });
+  },
+  { root: null, threshold: 0.15 }
+);
 
 document.querySelectorAll(".three-slot").forEach((slot) => {
-  if (isMobile) return; // ✅ skip small slots on mobile
-  // 🚫 If this slot is inside the chosen section: remove its canvas and skip init
+  // 🚫 If this slot is inside the chosen section: skip init
   if (SECTION_WITHOUT_3D && SECTION_WITHOUT_3D.contains(slot)) {
     slot.querySelectorAll("canvas").forEach((c) => c.remove());
     return;
   }
 
-  // ✅ everything else behaves exactly as before
-  const url = slot.getAttribute("data-model");
-  if (!url) return;
-
-  const size = parseFloat(slot.getAttribute("data-size") || "1.6");
-  const oy = parseFloat(slot.getAttribute("data-offset-y") || "-0.4");
-  const group = slot.getAttribute("data-group") || "small";
-
-  createViewer(slot, url, size, oy, group);
+  // ✅ Lazy-load when visible
+  slotObserver.observe(slot);
 });
+
 
 
