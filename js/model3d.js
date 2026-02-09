@@ -269,7 +269,10 @@ if (big) {
   console.warn("No ._3d-container-big found (ok if you removed it).");
 }
 
+const isMobile = matchMedia("(max-width: 767px)").matches;
+
 document.querySelectorAll(".three-slot").forEach((slot) => {
+  if (isMobile) return; // ✅ skip small slots on mobile
   // 🚫 If this slot is inside the chosen section: remove its canvas and skip init
   if (SECTION_WITHOUT_3D && SECTION_WITHOUT_3D.contains(slot)) {
     slot.querySelectorAll("canvas").forEach((c) => c.remove());
@@ -286,3 +289,5 @@ document.querySelectorAll(".three-slot").forEach((slot) => {
 
   createViewer(slot, url, size, oy, group);
 });
+
+

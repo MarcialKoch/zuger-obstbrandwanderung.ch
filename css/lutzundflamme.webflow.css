@@ -1241,6 +1241,12 @@ a {
   display: block;
 }
 
+.three-slot[data-user-rotate="false"] canvas,
+._3d-container-big[data-user-rotate="false"] canvas {
+  pointer-events: none;
+  touch-action: pan-y;
+}
+
 .three-slot{
   position: relative;
   overflow: hidden;
