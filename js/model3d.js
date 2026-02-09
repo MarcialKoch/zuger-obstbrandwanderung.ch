@@ -144,6 +144,7 @@ function createViewer(mountEl, MODEL_URL, targetSize = 1.6, offsetY = -0.4, grou
   controls.dampingFactor = 0.07;
   controls.enablePan = false;
   controls.enableZoom = false;
+  controls.enableRotate = mountEl.dataset.userRotate !== "false";
   controls.minPolarAngle = Math.PI / 2;
   controls.maxPolarAngle = Math.PI / 2;
   controls.autoRotate = s.autoRotate;
@@ -263,7 +264,6 @@ const SECTION_WITHOUT_3D = document.querySelector("section.section-middle");
 const big = document.querySelector("._3d-container-big");
 if (big) {
   const glassURL = big.getAttribute("data-model") || "./models/glass.glb";
-  // ✅ removed: data-liquid
   createViewer(big, glassURL, 1.6, -0.4, "hero");
 } else {
   console.warn("No ._3d-container-big found (ok if you removed it).");

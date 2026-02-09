@@ -1971,9 +1971,9 @@ html.w-mod-js [data-ix="pop"] {
     font-size: 14px;
   }
 
-  .navbar-blur {
+  /* .navbar-blur {
     -webkit-backdrop-filter: none;
-  }
+  } */
 
     .hero-overlay-inner {
   padding: 10px 100px;
@@ -2774,8 +2774,8 @@ html.w-mod-js [data-ix="pop"] {
   }
 
 .goup-icon {
-  width: 10vw;
-  height: 10vw;
+  width: 14vw;
+  height: 14vw;
 }
 }
 
