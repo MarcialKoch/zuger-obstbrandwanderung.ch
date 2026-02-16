@@ -326,7 +326,7 @@ function createSharedSlotsViewer(containerEl, slots) {
             else if (oldMat) oldMat.dispose();
 
             obj.material = new THREE.MeshStandardMaterial({
-              color: new THREE.Color("#5b5b5b"),
+              color: new THREE.Color("#919191"),
               metalness: 0.0,
               roughness: 0.9
             });
