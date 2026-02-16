@@ -23,6 +23,17 @@
 }
 </script>
 <script src="./js/map.js"></script>
+<script>
+  // Remove hash before browser processes it
+  if (window.location.hash) {
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+  }
+
+  // Prevent scroll restoration
+  if ("scrollRestoration" in history) {
+    history.scrollRestoration = "manual";
+  }
+</script>
 </head>
 <body>
   <div id="top" class="index">
@@ -282,6 +293,5 @@
   <script src="js/costume.js" type="text/javascript"></script>
   <script type="module" src="./js/model3d.js"></script>
   <script src="js/iconchange.js" type="text/javascript"></script>
-<script src="js/onepage.js" type="text/javascript"></script>
 </body>
 </html>

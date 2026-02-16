@@ -80,3 +80,7 @@ window.addEventListener("load", () => {
   toggleButton.addEventListener("click", () => {
     toggleButton.classList.toggle("is-active");
   });
+
+  window.addEventListener("load", () => {
+  window.scrollTo(0, 0);
+});
