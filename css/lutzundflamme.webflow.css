@@ -1399,6 +1399,7 @@ color: #952c2c;
   z-index: 10;
   background: rgba(0,0,0,0.001);
   cursor: grab;
+  touch-action: pan-y;           /* allow vertical page scroll */
 }
 
 .flex-text-container-hof {
