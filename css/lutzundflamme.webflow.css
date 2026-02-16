@@ -1380,6 +1380,8 @@ color: #952c2c;
   margin-right: 48px;
   padding-top: 24px;
   padding-bottom: 24px;
+  position: relative;   /* required for absolute overlay */
+  isolation: isolate;   /* avoids z-index conflicts */
 }
 
 .map-iframe {
@@ -1388,6 +1390,15 @@ color: #952c2c;
   height: auto;
   border: 0;
   display: block;
+  pointer-events: none;
+}
+
+.map-overlay{
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: rgba(0,0,0,0.001);
+  cursor: grab;
 }
 
 .flex-text-container-hof {
