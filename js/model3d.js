@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
-import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 console.log("model3d.js loaded ✅");
 
@@ -27,7 +27,7 @@ function loadGLB(url) {
 
 const GROUP_SETTINGS = {
   hero: {
-    exposure: 1.6,
+    exposure: 2.2,
     ambient: 1.2,
     hemi: 1.2,
     key: 2.5,
@@ -55,19 +55,16 @@ const GROUP_SETTINGS = {
   }
 };
 
-// HDR for realistic reflections (only for big hero)
-const HDR_URL = "./hdr/studio_small_08_1k.hdr";
-
 function makeGlassMaterial() {
   const m = new THREE.MeshPhysicalMaterial({
-    metalness: 0,
+    metalness: 0.005,
     transmission: 1.0,
     transparent: true,
-    opacity: 4,
+    opacity: 0.95,
     ior: 1.52,
     thickness: 0.01,
     roughness: 0.001,
-    envMapIntensity: 3.0,
+    envMapIntensity: 5.0,
     specularIntensity: 1.0,
     specularColor: new THREE.Color(0xffffff),
     clearcoat: 1.0,
@@ -100,7 +97,8 @@ function createViewer(mountEl, MODEL_URL, targetSize = 1.6, offsetY = -0.4, grou
   const s = GROUP_SETTINGS[group] || GROUP_SETTINGS.hero;
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  renderer.setPixelRatio(isAndroid ? 1.25 : Math.min(window.devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = s.exposure;
@@ -153,19 +151,12 @@ function createViewer(mountEl, MODEL_URL, targetSize = 1.6, offsetY = -0.4, grou
 
   if (group === "hero") {
     const pmrem = new THREE.PMREMGenerator(renderer);
-    new RGBELoader().load(
-      HDR_URL,
-      (hdr) => {
-        scene.environment = pmrem.fromEquirectangular(hdr).texture;
-        hdr.dispose();
-        pmrem.dispose();
-      },
-      undefined,
-      (err) => {
-        console.error("❌ HDR load error:", err);
-        console.error("➡️ HDR URL:", HDR_URL);
-      }
-    );
+
+    // Studio-like reflections without loading an HDR file
+    const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = envTex;
+
+    pmrem.dispose();
   }
 
   loadGLB(MODEL_URL)
@@ -236,7 +227,8 @@ function createSharedSlotsViewer(containerEl, slots) {
   containerEl.style.position = containerEl.style.position || "relative";
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  renderer.setPixelRatio(isAndroid ? 1.25 : Math.min(window.devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.setScissorTest(true);
@@ -248,7 +240,7 @@ function createSharedSlotsViewer(containerEl, slots) {
   canvas.style.top = "0";
   canvas.style.width = "100%";
   canvas.style.height = "100%";
-  canvas.style.zIndex = "1";          // IMPORTANT: on top so you actually see it
+  canvas.style.zIndex = "1"; // IMPORTANT: on top so you actually see it
   canvas.style.pointerEvents = "none"; // matches data-user-rotate="false"
   containerEl.appendChild(canvas);
 
@@ -261,6 +253,107 @@ function createSharedSlotsViewer(containerEl, slots) {
   });
 
   const views = [];
+
+  // --- Rect caching (avoid getBoundingClientRect every frame) ---
+  let canvasRect = null;
+  const slotRects = new Map(); // slotEl -> DOMRect
+  let rectsDirty = true;
+  let rectsRaf = 0;
+
+  function updateRects() {
+    rectsRaf = 0;
+    rectsDirty = false;
+
+    canvasRect = canvas.getBoundingClientRect();
+    slotRects.clear();
+
+    // Cache rects for all slots we track (views array)
+    for (const v of views) {
+      slotRects.set(v.slot, v.slot.getBoundingClientRect());
+    }
+  }
+
+  function scheduleRectsUpdate() {
+    rectsDirty = true;
+    if (rectsRaf) return;
+    rectsRaf = requestAnimationFrame(updateRects);
+  }
+
+  // Initial compute
+  scheduleRectsUpdate();
+
+  // Update on scroll + resize (batched via rAF)
+  window.addEventListener("scroll", scheduleRectsUpdate, { passive: true });
+  window.addEventListener("resize", scheduleRectsUpdate, { passive: true });
+
+  // Lazy-load each GLB only when its slot becomes visible
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+
+        const view = entry.target.__threeView;
+        if (!view || view.__loaded) return;
+
+        view.__loaded = true;
+        io.unobserve(entry.target);
+
+        loadGLB(view.url)
+          .then((mainGltf) => {
+            const mainModel = mainGltf.scene.clone(true);
+
+            const combined = new THREE.Group();
+            combined.add(mainModel);
+
+            // Same "small" look as before
+            if (view.group === "small") {
+              combined.rotation.y = Math.random() * Math.PI * 2;
+              combined.rotation.x = (Math.random() - 0.5) * 0.25;
+              combined.rotation.z = (Math.random() - 0.5) * 0.15;
+
+              combined.traverse((obj) => {
+                if (!obj.isMesh) return;
+
+                const oldMat = obj.material;
+                if (Array.isArray(oldMat)) oldMat.forEach((m) => m && m.dispose());
+                else if (oldMat) oldMat.dispose();
+
+                obj.material = new THREE.MeshStandardMaterial({
+                  color: new THREE.Color("#919191"),
+                  metalness: 0.0,
+                  roughness: 0.9
+                });
+              });
+            }
+
+            const box = new THREE.Box3().setFromObject(combined);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            const center = new THREE.Vector3();
+            box.getCenter(center);
+
+            combined.position.sub(center);
+            combined.position.y += view.offsetY;
+
+            const maxDim = Math.max(size.x, size.y, size.z) || 1;
+            const scale = view.targetSize / maxDim;
+            combined.scale.setScalar(scale);
+
+            view.scene.add(combined);
+            view.controls.target.set(0, 0, 0);
+            view.controls.update();
+
+            // ✅ slot rects can change slightly once model appears; keep cache correct
+            scheduleRectsUpdate();
+          })
+          .catch((err) => {
+            console.error("❌ GLB load error:", err);
+            console.error("➡️ main:", view.url);
+          });
+      });
+    },
+    { root: null, threshold: 0.1 }
+  );
 
   slots.forEach((slot) => {
     const url = slot.getAttribute("data-model");
@@ -305,57 +398,15 @@ function createSharedSlotsViewer(containerEl, slots) {
     controls.autoRotate = s.autoRotate;
     controls.autoRotateSpeed = s.rotateSpeed ?? 0.6;
 
-    loadGLB(url)
-      .then((mainGltf) => {
-        const mainModel = mainGltf.scene.clone(true);
+    // Register view for lazy-loading
+    const view = { slot, scene, camera, controls, url, targetSize, offsetY, group, __loaded: false };
+    slot.__threeView = view;
+    views.push(view);
 
-        const combined = new THREE.Group();
-        combined.add(mainModel);
+    // Load only when visible
+    io.observe(slot);
 
-        // Same "small" look as before
-        if (group === "small") {
-          combined.rotation.y = Math.random() * Math.PI * 2;
-          combined.rotation.x = (Math.random() - 0.5) * 0.25;
-          combined.rotation.z = (Math.random() - 0.5) * 0.15;
-
-          combined.traverse((obj) => {
-            if (!obj.isMesh) return;
-
-            const oldMat = obj.material;
-            if (Array.isArray(oldMat)) oldMat.forEach((m) => m && m.dispose());
-            else if (oldMat) oldMat.dispose();
-
-            obj.material = new THREE.MeshStandardMaterial({
-              color: new THREE.Color("#919191"),
-              metalness: 0.0,
-              roughness: 0.9
-            });
-          });
-        }
-
-        const box = new THREE.Box3().setFromObject(combined);
-        const size = new THREE.Vector3();
-        box.getSize(size);
-        const center = new THREE.Vector3();
-        box.getCenter(center);
-
-        combined.position.sub(center);
-        combined.position.y += offsetY;
-
-        const maxDim = Math.max(size.x, size.y, size.z) || 1;
-        const scale = targetSize / maxDim;
-        combined.scale.setScalar(scale);
-
-        scene.add(combined);
-        controls.target.set(0, 0, 0);
-        controls.update();
-      })
-      .catch((err) => {
-        console.error("❌ GLB load error:", err);
-        console.error("➡️ main:", url);
-      });
-
-    views.push({ slot, scene, camera, controls });
+    return;
   });
 
   function resizeRendererToContainer() {
@@ -365,13 +416,21 @@ function createSharedSlotsViewer(containerEl, slots) {
     renderer.setSize(w, h, false);
   }
 
-  new ResizeObserver(resizeRendererToContainer).observe(containerEl);
+  // ✅ Keep rect cache in sync when the container/layout changes
+  new ResizeObserver(() => {
+    resizeRendererToContainer();
+    scheduleRectsUpdate();
+  }).observe(containerEl);
+
   resizeRendererToContainer();
+  scheduleRectsUpdate();
 
   function render() {
     requestAnimationFrame(render);
 
-    const canvasRect = canvas.getBoundingClientRect();
+    // ✅ Only recompute DOM geometry when needed (scroll/resize/etc.)
+    if (rectsDirty || !canvasRect) updateRects();
+
     const cw = canvasRect.width;
     const ch = canvasRect.height;
     if (cw <= 0 || ch <= 0) return;
@@ -379,7 +438,8 @@ function createSharedSlotsViewer(containerEl, slots) {
     renderer.setClearColor(0x000000, 0);
 
     for (const v of views) {
-      const r = v.slot.getBoundingClientRect();
+      const r = slotRects.get(v.slot);
+      if (!r) continue;
 
       const left = r.left - canvasRect.left;
       const top = r.top - canvasRect.top;
