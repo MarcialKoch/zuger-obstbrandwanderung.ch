@@ -5,22 +5,56 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 console.log("model3d.js loaded ✅");
 
 const loader = new GLTFLoader();
 const gltfCache = new Map();
+const isMobile = matchMedia("(max-width: 767px)").matches;
 
-const dLoader = new DRACOLoader();
-dLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.7/");
-loader.setDRACOLoader(dLoader);
+function runHeroWhenReady(fn) {
+  if (!isMobile) {
+    // Desktop: run immediately
+    fn();
+    return;
+  }
+
+  // Mobile: delay until the browser is idle (best) or after a short timeout (fallback)
+  if ("requestIdleCallback" in window) {
+    requestIdleCallback(() => fn(), { timeout: 1500 });
+  } else {
+    setTimeout(fn, 800);
+  }
+}
+
+let dracoReady = false;
+
+async function ensureDraco() {
+  if (dracoReady) return;
+
+  const { DRACOLoader } = await import("three/addons/loaders/DRACOLoader.js");
+  const dLoader = new DRACOLoader();
+  dLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.7/");
+  loader.setDRACOLoader(dLoader);
+
+  dracoReady = true;
+}
+
 
 function loadGLB(url) {
   if (!url) return Promise.reject(new Error("Missing GLB url"));
   if (gltfCache.has(url)) return gltfCache.get(url);
-  const p = new Promise((resolve, reject) => loader.load(url, resolve, undefined, reject));
+
+  const p = (async () => {
+    // ✅ Lazy-load DRACO only when we actually start loading a model
+    await ensureDraco();
+
+    return await new Promise((resolve, reject) => {
+      loader.load(url, resolve, undefined, reject);
+    });
+  })();
+
   gltfCache.set(url, p);
   return p;
 }
@@ -98,7 +132,7 @@ function createViewer(mountEl, MODEL_URL, targetSize = 1.6, offsetY = -0.4, grou
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   const isAndroid = /Android/i.test(navigator.userAgent);
-  renderer.setPixelRatio(isAndroid ? 1.25 : Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(isAndroid ? 1 : Math.min(window.devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = s.exposure;
@@ -487,7 +521,10 @@ const SECTION_WITHOUT_3D = document.querySelector("section.section-middle");
 const big = document.querySelector("._3d-container-big");
 if (big) {
   const glassURL = big.getAttribute("data-model") || "./models/glass.glb";
-  createViewer(big, glassURL, 1.6, -0.4, "hero");
+
+  runHeroWhenReady(() => {
+    createViewer(big, glassURL, 1.6, -0.4, "hero");
+  });
 } else {
   console.warn("No ._3d-container-big found (ok if you removed it).");
 }
