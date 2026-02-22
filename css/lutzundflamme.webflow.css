@@ -208,7 +208,7 @@ a {
 
 .index {
   opacity: 1;
-  background-image: url('../images/Zugerland.jpg');
+  background-image: url('../images/Zugerland.webp');
   background-position: 0 0, 0 0;
   background-repeat: repeat, repeat;
   background-size: cover, 125px;
@@ -222,7 +222,7 @@ a {
 }
 
 .index.index {
-  background-image: url('../images/Zugerland.jpg');
+  background-image: url('../images/Zugerland.webp');
   background-position: 0 0;
   background-repeat: repeat;
   background-attachment: fixed;
@@ -341,18 +341,6 @@ a {
 
 .newsletter_form {
   margin-right: auto;
-}
-
-.slide1 {
-  float: none;
-  background-image: url('../images/girl-music-headphones.jpg');
-  background-size: cover;
-  margin-top: 0;
-  display: block;
-}
-
-.slide2 {
-  background-image: url('../images/slide.jpg');
 }
 
 .section_sponsors {
@@ -1549,7 +1537,7 @@ html.w-mod-js [data-ix="pop"] {
   }
 
   .index {
-    background-image: url('../images/Zugerland.jpg');
+    background-image: url('../images/Zugerland.webp');
     background-position: 6% 25%, 0 0;
     background-repeat: repeat, no-repeat;
     background-size: cover, cover;
@@ -2048,7 +2036,7 @@ html.w-mod-js [data-ix="pop"] {
   }
 
   .index.index {
-    background-image: url('../images/Zugerland.jpg');
+    background-image: url('../images/Zugerland.webp');
   }
 
   .icon_menu {
@@ -2150,7 +2138,7 @@ html.w-mod-js [data-ix="pop"] {
   }
 
   .colcol.imageholder {
-    background-image: url('../images/Zugerland.jpg');
+    background-image: url('../images/Zugerland.webp');
     background-position: 0 51%;
     margin-top: 10px;
     display: none;
