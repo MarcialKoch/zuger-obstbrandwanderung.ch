@@ -260,9 +260,14 @@ function createSharedSlotsViewer(containerEl, slots) {
   // Make sure container is a positioning context for the overlay canvas
   containerEl.style.position = containerEl.style.position || "relative";
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  const isAndroid = /Android/i.test(navigator.userAgent);
-  renderer.setPixelRatio(isAndroid ? 1.25 : Math.min(window.devicePixelRatio, 2));
+const isAndroid = /Android/i.test(navigator.userAgent);
+
+const renderer = new THREE.WebGLRenderer({
+  antialias: !isAndroid,   // ✅ off on Android
+  alpha: true,
+  powerPreference: "high-performance"
+});
+  renderer.setPixelRatio(isAndroid ? 1.0 : Math.min(window.devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.setScissorTest(true);
@@ -458,10 +463,15 @@ function createSharedSlotsViewer(containerEl, slots) {
 
   resizeRendererToContainer();
   scheduleRectsUpdate();
-
-  function render() {
+let last = 0;
+const FPS = isAndroid ? 30 : 60;
+const frameMs = 1000 / FPS;
+  
+function render(now) {
     requestAnimationFrame(render);
-
+if (!now) now = performance.now();
+if (now - last < frameMs) return;
+last = now;
     // ✅ Only recompute DOM geometry when needed (scroll/resize/etc.)
     if (rectsDirty || !canvasRect) updateRects();
 
@@ -507,7 +517,7 @@ function createSharedSlotsViewer(containerEl, slots) {
     }
   }
 
-  render();
+  requestAnimationFrame(render);
 }
 
 /* ------------------------------------------------------------------
