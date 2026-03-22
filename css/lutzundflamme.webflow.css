@@ -1928,16 +1928,16 @@ html.w-mod-js [data-ix="pop"] {
 
   .nav-linkblock {
     text-align: center;
-    margin-bottom: 24px;
+    margin-bottom: 48px;
     padding: 0;
-    font-size: 34px;
+    font-size: 60px;
     font-weight: 700;
     line-height: 3rem;
     text-decoration: none;
   }
 
   .nav-linkblock.w--current {
-    font-size: 34px;
+    font-size: 60px;
   }
 
   .nav-link-wrapper {
@@ -2729,11 +2729,11 @@ html.w-mod-js [data-ix="pop"] {
 
   .nav-linkblock {
     margin-bottom: 24px;
-    font-size: 26px;
+    font-size: 36px;
     line-height: 2rem;
   }
     .nav-linkblock.w--current {
-    font-size: 26px;
+    font-size: 36px;
   }
 
   .paragraph-4 {
@@ -2784,3 +2784,44 @@ html.w-mod-js [data-ix="pop"] {
 }
 
 
+
+
+/* === Mobile fallback for team heads === */
+.about-heads-mobile {
+  display: none;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.about-head-card {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.about-head-mobile-img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  height: auto;
+}
+
+@media screen and (max-width: 767px) {
+  .about-heads-3d {
+    display: none;
+  }
+
+  .about-heads-mobile {
+    display: grid;
+  }
+}
+
+@media screen and (max-width: 479px) {
+  .about-heads-mobile {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 12px;
+  }
+}

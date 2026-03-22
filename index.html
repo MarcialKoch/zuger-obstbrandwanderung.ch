@@ -244,7 +244,7 @@
           <h2 data-ix="pop" class="head-future">Lutz &amp; Flamme</h2>
           <p class="paragraph-1">8 Freunde die gerne bei einem Kafi Lutz über die Welt nachdenken. Was dabei heraus kommt seht ihr hier.</p>
         </div>
-        <div class="w-layout-blockcontainer flex-text-container-3d w-container">
+        <div class="w-layout-blockcontainer flex-text-container-3d w-container about-heads-3d">
           <div class="three-slot _3d" data-group="small" data-model="./models/Fredi.glb" data-size="1.0" data-offset-y="-0.2" data-user-rotate="false"></div>
           <div class="three-slot _3d" data-group="small" data-model="./models/Jan.glb" data-size="1.0" data-offset-y="-0.2" data-user-rotate="false"></div>
           <div class="three-slot _3d" data-group="small" data-model="./models/Marek.glb" data-size="1.0" data-offset-y="-0.2" data-user-rotate="false"></div>
@@ -253,7 +253,17 @@
           <div class="three-slot _3d" data-group="small" data-model="./models/Kili.glb" data-size="1.0" data-offset-y="-0.2" data-user-rotate="false"></div>
           <div class="three-slot _3d" data-group="small" data-model="./models/Lucca.glb" data-size="1.0" data-offset-y="-0.2" data-user-rotate="false"></div>
           <div class="three-slot _3d" data-group="small" data-model="./models/Fabian.glb" data-size="1.0" data-offset-y="-0.2" data-user-rotate="false"></div>
-          </div>
+        </div>
+        <div class="w-layout-blockcontainer about-heads-mobile w-container" aria-label="Lutz &amp; Flamme Team">
+          <figure class="about-head-card"><img class="about-head-mobile-img" src="./images/heads/Fredi.webp" alt="Fredi" loading="lazy"></figure>
+          <figure class="about-head-card"><img class="about-head-mobile-img" src="./images/heads/Jan.webp" alt="Jan" loading="lazy"></figure>
+          <figure class="about-head-card"><img class="about-head-mobile-img" src="./images/heads/Marek.webp" alt="Marek" loading="lazy"></figure>
+          <figure class="about-head-card"><img class="about-head-mobile-img" src="./images/heads/Marcial.webp" alt="Marcial" loading="lazy"></figure>
+          <figure class="about-head-card"><img class="about-head-mobile-img" src="./images/heads/Dave.webp" alt="Dave" loading="lazy"></figure>
+          <figure class="about-head-card"><img class="about-head-mobile-img" src="./images/heads/Kili.webp" alt="Kili" loading="lazy"></figure>
+          <figure class="about-head-card"><img class="about-head-mobile-img" src="./images/heads/Lucca.webp" alt="Lucca" loading="lazy"></figure>
+          <figure class="about-head-card"><img class="about-head-mobile-img" src="./images/heads/Fabian.webp" alt="Fabian" loading="lazy"></figure>
+        </div>
       </div>
       <div class="w-layout-blockcontainer flex-text-container w-container">
         <div class="box">
@@ -293,16 +303,22 @@
   <script src="js/webflow.js" type="text/javascript"></script>
   <script src="js/costume.js" type="text/javascript"></script>
   <script type="module">
-  // Lazy-load model3d.js (and Three.js) only when the hero 3D container is close to view
+  // Lazy-load model3d.js (and Three.js) only when the hero 3D container is close to view.
+  // On mobile we remove the small team heads from the DOM before loading model3d.js,
+  // so only the hero glass stays 3D and the image fallback is shown instead.
   const hero = document.querySelector("._3d-container-big");
+  const isMobile = window.matchMedia("(max-width: 767px)").matches;
 
-  // If the element isn't on the page, do nothing
+  if (isMobile) {
+    document.documentElement.classList.add("mobile-heads-fallback");
+    document.querySelectorAll("#section_about .three-slot").forEach((el) => el.remove());
+  }
+
   if (!hero) {
     console.warn("Lazy 3D loader: no ._3d-container-big found.");
   } else {
     const load3D = () => import("./js/model3d.js");
 
-    // If IntersectionObserver is not supported, load immediately
     if (!("IntersectionObserver" in window)) {
       load3D();
     } else {
@@ -314,7 +330,6 @@
           }
         },
         {
-          // Start loading a bit before it’s visible (smooth UX)
           root: null,
           rootMargin: "600px 0px",
           threshold: 0.01
