@@ -501,7 +501,6 @@ textarea.w-select {
 }
 .w-container:before,
 .w-container:after {
-  content: " ";
   display: table;
   grid-column-start: 1;
   grid-row-start: 1;
