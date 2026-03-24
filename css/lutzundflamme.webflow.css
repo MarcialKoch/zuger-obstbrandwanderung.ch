@@ -2456,7 +2456,7 @@ html.w-mod-js [data-ix="pop"] {
   }
 
   .box {
-    margin-left: auto;
+    /* margin-left: auto; */
     margin-right: auto;
     display: block;
   }
