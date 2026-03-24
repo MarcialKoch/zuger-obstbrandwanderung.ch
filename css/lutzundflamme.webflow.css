@@ -365,11 +365,11 @@ a {
 .drop_menu {
   z-index: auto;
   opacity: 1;
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   color: #0000;
   text-shadow: none;
-  background-color: #ffffff78;
+  background-color: rgba(150, 150, 150, 0.6);
   justify-content: flex-start;
   width: auto;
   height: auto;
@@ -1273,9 +1273,9 @@ a {
 }
 
 .nav-linkblock {
-  margin-bottom: 24px;
+  margin-bottom: 72px;
   padding: 0;
-  font-size: 40px;
+  font-size: 80px;
   font-weight: 700;
   line-height: 3rem;
 }
@@ -1611,10 +1611,7 @@ html.w-mod-js [data-ix="pop"] {
 
   .drop_menu {
     opacity: 1;
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
     text-shadow: none;
-    background-color: #ffffff78;
     border-bottom-right-radius: 0;
     width: auto;
     height: auto;
