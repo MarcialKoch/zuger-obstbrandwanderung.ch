@@ -129,38 +129,35 @@ function applySingleMaterial(root, materialFactory, renderOrder) {
    ------------------------------------------------------------------ */
 function createViewer(mountEl, MODEL_URL, targetSize = 1.6, offsetY = -0.4, group = "hero") {
   const s = GROUP_SETTINGS[group] || GROUP_SETTINGS.hero;
+  let isVisible = true;
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  const isAndroid = /Android/i.test(navigator.userAgent);
-  renderer.setPixelRatio(isAndroid ? 1 : Math.min(window.devicePixelRatio, 2));
+  const isMobile = matchMedia("(max-width: 767px)").matches;
+
+  const renderer = new THREE.WebGLRenderer({
+    antialias: !isMobile,
+    alpha: true
+  });
+
+  renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = s.exposure;
   mountEl.appendChild(renderer.domElement);
+  
+  const visibilityObserver = new IntersectionObserver(
+  (entries) => {
+    isVisible = entries[0]?.isIntersecting ?? false;
+  },
+  {
+    threshold: 0.01
+  }
+);
+
+visibilityObserver.observe(mountEl);
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 200);
   camera.position.set(0, 0.8, 3.2);
-
-  scene.add(new THREE.AmbientLight(0xffffff, s.ambient));
-
-  const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, s.hemi);
-  hemi.position.set(0, 2, 0);
-  scene.add(hemi);
-
-  const key = new THREE.DirectionalLight(0xffffff, s.key);
-  key.position.set(3, 5, 2);
-  scene.add(key);
-
-  const fill = new THREE.DirectionalLight(0xffffff, s.fill);
-  fill.position.set(-4, 2, 4);
-  scene.add(fill);
-
-  if (group === "hero") {
-    const rim = new THREE.DirectionalLight(0xffffff, 0.9);
-    rim.position.set(-3, 2.5, -3);
-    scene.add(rim);
-  }
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -245,12 +242,15 @@ function createViewer(mountEl, MODEL_URL, targetSize = 1.6, offsetY = -0.4, grou
       console.error("➡️ main:", MODEL_URL);
     });
 
-  function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
-  }
-  animate();
+function animate() {
+  requestAnimationFrame(animate);
+
+  if (!isVisible) return;
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
 }
 
 /* ------------------------------------------------------------------

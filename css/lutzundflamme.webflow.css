@@ -2052,10 +2052,12 @@ html.w-mod-js [data-ix="pop"] {
 
   .index {
     background-position: 34% 0, 0 0;
+    background-attachment: scroll !important;
   }
 
   .index.index {
     background-image: url('../images/Zugerland.webp');
+    background-attachment: scroll !important;
   }
 
   .icon_menu {
